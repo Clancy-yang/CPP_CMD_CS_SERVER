@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="1h2g (bdb49d43-2a13-4e6f-a1d6-bd5129cafd10)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/root/project/CPP_CMD_CS_TEST_SERVER" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-1h2g" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="hx44 (232cf63c-3faa-4107-bff6-28f9ea2971bf)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/CPP_CMD_CS_TEST_SERVER" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="hx52 (37ebe5a6-e077-45aa-af1e-853a5132b642)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="hx53 (e9cafadb-dae6-45c0-8ec3-a414ff27d3eb)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="vm132 (a4150156-aba1-4c8f-adc9-98a3b5950ead)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/root/dpdk-src/CPP_CMD_CS_TEST_SERVER" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-vm132" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-vm132" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="vm133 (6598b520-b470-4697-86ab-eb73eec9ba0b)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
