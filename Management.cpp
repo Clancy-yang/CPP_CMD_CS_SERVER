@@ -68,8 +68,33 @@ bool ServiceManagement::run(Client &client){
     return status_;
 }
 
+
+
 vector<ChatRecord> chat_record_vector;
 map<string,ClientInfo> client_map;
+
+// 消息回传线程
+void * send_msg(void *arg){
+    uint64_t record_num = 0;
+    SendMsg *msg = (SendMsg*)arg;
+    //在创建线程前设置线程创建属性,设为分离态,效率高
+    pthread_detach(pthread_self());
+    cout << "回传线程启动成功" << chat_record_vector.size()<< endl;
+    while(!msg->m_stop){
+        if(record_num < chat_record_vector.size()){
+            string str = "["+chat_record_vector[record_num].ip+"]:"+chat_record_vector[record_num].record;
+            Data result;
+            result.flags = 0x03;
+            result.data_len = str.size();
+            memcpy(result.data,str.c_str(),result.data_len);
+            write(msg->client_socket, (char*)&result, 1024);
+            ++record_num;
+        }else{
+            usleep(5);
+        }
+    }
+    pthread_exit(NULL);
+}
 
 void * run(void *arg){
     Client* client = (Client*)arg;
@@ -84,28 +109,60 @@ void * run(void *arg){
     pthread_detach(pthread_self());
 
     while (true) {
-        Data data;
-        memset(&data,0,sizeof(data));
-        if (recv(client->client_socket, (char*)&data, 1024, 0) == -1)
+        Data *data = new Data();
+        if (recv(client->client_socket, (char*)data, 1024, 0) == -1)
         {
             cout << "[" << client->client_info.ip << "]:连接出错:"<<
             errno << "(" << strerror(errno) <<")"<< endl;
             break;
         }
-
-        if (data.flags == 0x01) {       //登录
-            cout << "[" << client->client_info.ip << "]:登录成功!(当前服务器人数:"<<client_map.size()<<")" << endl;
+        string client_info_header = "[" + client->client_info.ip + "]:";
+        cout << "原始数据:" <<  (char*)data <<" flags:"<<data->flags<<" data_len:" << data->data_len << endl;
+        bool stop = false;
+        if (data->flags == 0x01) {       // 登录
+            string str = client_info_header + "登录成功!";
+            cout << str +"(当前服务器人数:" << client_map.size() << ")" << endl;
+            Data result;
+            result.flags = 0x01;
+            result.data_len = str.size();
+            memcpy(result.data,str.c_str(),result.data_len);
+            write(client->client_socket, (char*)&result, 1024);
+            pthread_t tid;
+            SendMsg *msg = new SendMsg();
+            msg->flags = 0x01;
+            msg->m_stop = &stop;
+            msg->client_socket = client->client_socket;
+            pthread_create(&tid,NULL,send_msg,(void*)msg);
         }
-        else if (data.flags == 0x02) {  //退出
+        else if (data->flags == 0x02) {  // 退出
+            string str = client_info_header + "退出成功!";
             cout << "[" << client->client_info.ip << "]:退出服务器!(当前服务器人数:"<<client_map.size()<<")" << endl;
+            Data result;
+            result.flags = 0x02;
+            result.data_len = str.size();
+            memcpy(result.data,str.c_str(),result.data_len);
+            write(client->client_socket, (char*)&result, 1024);
+            stop = true;
             break;
         }
-        else if (data.flags == 0x03) {  //通讯
-            string str(data.data, data.data_len);
+        else if (data->flags == 0x03) {  // 通讯
+            string str(data->data, data->data_len);
             cout << "[" << client->client_info.ip << "]:"<< str << endl;
             ChatRecord chatRecord(client->client_info.ip,str);
             chat_record_vector.push_back(chatRecord);
         }
+//        else if(data.flags == 0x04) {  // 请求消息记录
+//            string str;
+//            Data result;
+//            result.flags = 0x05;
+//            for(auto record:chat_record_vector){
+//                str += ("["+record.ip+"]:"+record.record+"\r\n");
+//            }
+//            write(client->client_socket, str.c_str(), str.size());
+//        }
+
+        delete data;
+        data = NULL;
     }
     map<string,ClientInfo>::iterator its = client_map.find(client->client_info.ip);
     if(its != client_map.end()){

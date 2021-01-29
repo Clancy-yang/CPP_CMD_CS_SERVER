@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <cstring>
+#include "string"
 #include <iostream>
 #include <cerrno>
 #include <vector>
@@ -28,6 +29,12 @@ struct Data {
     uint16_t flags;     // 标志位:0x01登录,0x02退出,0x03发送信息
     uint16_t data_len;  // 负载长度(小于1000)
     char data[1020];    // 负载
+};
+
+struct SendMsg{
+    uint16_t flags;     // 标志位:
+    bool *m_stop;        //
+    SOCKET client_socket;
 };
 
 struct ClientInfo{

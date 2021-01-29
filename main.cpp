@@ -6,7 +6,7 @@
 
 using namespace std;
 
-bool app_stopped = false;
+static bool app_stopped = false;
 
 //void sigint_handler(int sig){
 //    if(sig == SIGINT){
@@ -30,6 +30,7 @@ int main(){
         if((client->client_socket = accept(management.receive_socket_,(struct sockaddr*)&client->client_addr,&client_addr_size)) == -1){
             cout << "Accept Socket Failed! error:(" << errno << strerror(errno) << ")" << endl;
             close(client->client_socket);
+            break;
         }else{
             client->client_info.ip = inet_ntoa(client->client_addr.sin_addr);
             client->client_info.connect_num++;
