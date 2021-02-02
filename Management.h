@@ -22,55 +22,78 @@ using namespace std;
 
 #define SOCKET int
 #define SOCKADDR_IN sockaddr_in
+#define SOCKADDR sockaddr
 #define POST 1234
 
-//数据结构体:用于数据交互
-struct Data {
+/* *********** 基础信息存放结构体 ************** */
+// 数据信息
+struct DataInfo {
     uint16_t flags;     // 标志位:0x01登录,0x02退出,0x03发送信息
-    uint16_t data_len;  // 负载长度(小于1000)
+    uint16_t len;       // 负载长度(小于1000)
     char data[1020];    // 负载
 };
 
-struct SendMsg{
-    uint16_t flags;     // 标志位:
-    bool *m_stop;        //
-    SOCKET client_socket;
+// socket信息
+struct SocketInfo{
+    SOCKET socket;
+    SOCKADDR_IN sockaddrIn;
 };
 
+// 客户端详情
 struct ClientInfo{
-    string ip;
-    uint64_t connect_num;
-    ClientInfo():connect_num(0){};
+    uint64_t clientId;
+    string clientName;
+    string clientIp;
+    uint64_t connectNum;
+    ClientInfo(): connectNum(0){};
+    bool operator==(const ClientInfo& clientInfo) const{
+        return (clientInfo.clientId == this->clientId && clientInfo.clientName == this->clientName);
+    }
 };
 
-struct Client{
-    SOCKET client_socket;
-    SOCKADDR_IN client_addr;
-    ClientInfo client_info;
-};
-
+// 聊天记录
 struct ChatRecord{
-    string ip;
+    ClientInfo clientInfo;
     string record;
-    ChatRecord(const string& ip,const string& record):ip(ip),record(record){}
+    ChatRecord(ClientInfo& clientInfo,const string& record):clientInfo(clientInfo),record(record){}
 };
 
-//服务管理类
+// SocketThread线程参数
+struct SocketParam{
+    SocketInfo socketInfo;
+    ClientInfo clientInfo;
+    vector<ChatRecord> *chatRecordVector;
+    map<uint64_t ,ClientInfo> *clientMap;
+};
+
+// CallbackThread参数
+struct CallbackParam{
+    uint16_t *m_stop;
+    SOCKET clientSocket;
+    vector<ChatRecord> *chatRecordVector;
+    CallbackParam(uint16_t* m_stop,SOCKET clientSocket,vector<ChatRecord> *chatRecordVector):
+            m_stop(m_stop),clientSocket(clientSocket),chatRecordVector(chatRecordVector)
+    {}
+};
+
+// 服务管理类,用于启动
+bool Init(SocketInfo&);
+
 class ServiceManagement {
 public:
     ServiceManagement();
     ~ServiceManagement(){
         if(status_) close(receive_socket_);
     }
-    bool run(Client &client);
-
     bool status_; //激活状态
     SOCKET receive_socket_;
     SOCKADDR_IN receive_add_in_;
 };
 
 
-void * run(void *arg);
+void * SocketThread(void *arg);
+
+
 
 
 

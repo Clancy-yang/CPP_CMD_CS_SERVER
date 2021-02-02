@@ -6,41 +6,81 @@
 
 using namespace std;
 
-static bool app_stopped = false;
+SocketInfo receive;
 
-//void sigint_handler(int sig){
-//    if(sig == SIGINT){
-//        // ctrl+c退出时执行的代码
-//        std::cout << "ctrl+c pressed!" << std::endl;
-//        app_stopped = true;
-//    }
-//}
+void sigint_handler(int sig){
+    if(sig == SIGINT){
+        // ctrl+c退出时执行的代码
+        cout << "程序结束中.." << endl;
+        close(receive.socket);
+        cout << "程序结束" << endl;
+        exit(0);
+    }
+}
 
 int main(){
-    //signal(SIGINT, sigint_handler);
-    vector<pthread_t> pid_v;
+    signal(SIGINT, sigint_handler);
 
-    ServiceManagement management;
+    // 初始化变量
+    map<uint64_t ,ClientInfo> clientMap;
+    vector<ChatRecord> chatRecordVector;
 
-    while (!app_stopped){
-        pthread_t tid;
-        Client *client = new Client();
-        socklen_t client_addr_size = sizeof(client->client_addr);
+    //程序初始化
+    if(!Init(receive)){
+        exit(0);
+    }
 
-        if((client->client_socket = accept(management.receive_socket_,(struct sockaddr*)&client->client_addr,&client_addr_size)) == -1){
-            cout << "Accept Socket Failed! error:(" << errno << strerror(errno) << ")" << endl;
-            close(client->client_socket);
+    //主线程采用阻塞模式监听端口
+    uint64_t threadNumber = 0;
+    while(true){
+        pthread_t pthread;
+        SocketParam *param = new SocketParam();
+        socklen_t socklen = sizeof(param->socketInfo.sockaddrIn);
+
+        if((param->socketInfo.socket = accept(receive.socket,(struct sockaddr*)&param->socketInfo.sockaddrIn,&socklen)) == -1){
+            cout << "接收Socket失败:错误代码[" << errno << "](" << strerror(errno) << ")" << endl;
+            delete param;
+            param = NULL;
             break;
         }else{
-            client->client_info.ip = inet_ntoa(client->client_addr.sin_addr);
-            client->client_info.connect_num++;
-            cout << "[" << client->client_info.ip << "]:连接服务器!" << endl;
-            pthread_create(&tid,NULL,run,(void*)client);
-            pid_v.push_back(tid);
+            param->chatRecordVector = &chatRecordVector;
+            param->clientInfo.clientId = ++threadNumber;
+            param->clientInfo.clientIp = inet_ntoa(param->socketInfo.sockaddrIn.sin_addr);
+            param->clientMap = &clientMap;
+            param->clientInfo.connectNum++;
+            cout << "[" << param->clientInfo.clientIp << "]:连接服务器!" << endl;
+            //为该连接分配单独线程
+            pthread_create(&pthread,NULL,SocketThread,(void*)param);
         }
     }
 
-    cout << "程序结束" << endl;
+
+
+
+
+//    ServiceManagement management;
+//
+//
+//    while (!app_stopped){
+//        pthread_t tid;
+//        SocketParam *client = new SocketParam();
+//        socklen_t client_addr_size = sizeof(client->socketInfo.sockaddrIn);
+//
+//        if((client->socketInfo.socket = accept(management.receive_socket_,(struct sockaddr*)&client->socketInfo.sockaddrIn,&client_addr_size)) == -1){
+//            cout << "Accept Socket Failed! error:(" << errno << strerror(errno) << ")" << endl;
+//            close(client->socketInfo.socket);
+//            break;
+//        }else{
+//            client->chatRecordVector = &chatRecordVector;
+//            client->clientInfo.clientIp = inet_ntoa(client->socketInfo.sockaddrIn.sin_addr);
+//            client->clientInfo.connectNum++;
+//            cout << "[" << client->clientInfo.clientIp << "]:连接服务器!" << endl;
+//            pthread_create(&tid,NULL,SocketThread,(void*)client);
+//
+//        }
+//    }
+
+
 
 
 //    //创建套接字
@@ -76,10 +116,10 @@ int main(){
 //            //发送信息
 //            //send(serConn, sendBuf, strlen(sendBuf) + 1, 0);
 //
-//            Data data;
+//            DataInfo data;
 //            if (recv(serConn, (char*)&data, 1024, 0) < 0)
 //            {
-//                printf("Server Recieve Data Failed!\n");
+//                printf("Server Recieve DataInfo Failed!\n");
 //                break;
 //            }
 //
@@ -91,7 +131,7 @@ int main(){
 //                break;
 //            }
 //            else if (data.flags == 0x03) {  //通讯
-//                string str(data.data, data.data_len);
+//                string str(data.data, data.len);
 //                cout << "[" << inet_ntoa(clientsocket.sin_addr) << "]:"<< str << endl;
 //            }
 //        }
