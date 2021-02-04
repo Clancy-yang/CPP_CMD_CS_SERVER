@@ -93,7 +93,12 @@ void * CallbackThread(void *arg){
     while(!*(pCallbackParam->m_stop)){
         if(record_num < pCallbackParam->chatRecordVector->size()){
             string str = "[" + (*(pCallbackParam->chatRecordVector))[record_num].clientInfo.clientIp + "]("+ (*(pCallbackParam->chatRecordVector))[record_num].clientInfo.clientName +"):" + (*(pCallbackParam->chatRecordVector))[record_num].record;
-            SendMsg(pCallbackParam->clientSocket,0x03,str);
+            if(!(*(pCallbackParam->chatRecordVector))[record_num].kill_process)
+                SendMsg(pCallbackParam->clientSocket,0x03,str);
+            else{
+                SendMsg(pCallbackParam->clientSocket,0x04,str);
+                cout << pCallbackParam->clientSocket << " " << str << endl;
+            }
             ++record_num;
         }else{
             usleep(5);
@@ -145,18 +150,28 @@ void * SocketThread(void *arg){
             pthread_t tid;
             CallbackParam* callbackParam = new CallbackParam(&stop, pSocketParam->socketInfo.socket, pSocketParam->chatRecordVector);
             pthread_create(&tid, NULL, CallbackThread, (void *)callbackParam);
+            ChatRecord chatRecord(pSocketParam->clientInfo, "连接成功!");
+            pSocketParam->chatRecordVector->push_back(chatRecord);
         }
         else if (pDataInfo->flags == 0x02) {  // 退出
             string str = strIp + "退出成功!";
             cout << str <<  "(当前服务器人数:" << (pSocketParam->clientMap->size() - 1) << ")" << endl;
             SendMsg(pSocketParam->socketInfo.socket,0x02,str);
             stop = 0x01;
+            ChatRecord chatRecord(pSocketParam->clientInfo, "退出成功!");
+            pSocketParam->chatRecordVector->push_back(chatRecord);
             break;
         }
         else if (pDataInfo->flags == 0x03) {  // 通讯
             string str(pDataInfo->data, pDataInfo->len);
             cout << strIp << "(" << pSocketParam->clientInfo.clientName << "):" << str << endl;
             ChatRecord chatRecord(pSocketParam->clientInfo, str);
+            pSocketParam->chatRecordVector->push_back(chatRecord);
+        }
+        else if(pDataInfo->flags == 0x04) { // 杀死进程信号
+            string str(pDataInfo->data, pDataInfo->len);
+            cout << strIp << "(" << pSocketParam->clientInfo.clientName << ")K:" << str << endl;
+            ChatRecord chatRecord(pSocketParam->clientInfo, str,true);
             pSocketParam->chatRecordVector->push_back(chatRecord);
         }
 

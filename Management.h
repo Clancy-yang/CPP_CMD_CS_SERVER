@@ -55,7 +55,9 @@ struct ClientInfo{
 struct ChatRecord{
     ClientInfo clientInfo;
     string record;
-    ChatRecord(ClientInfo& clientInfo,const string& record):clientInfo(clientInfo),record(record){}
+    bool kill_process;
+    ChatRecord(ClientInfo& clientInfo,const string& record,bool kill_process = false):
+    clientInfo(clientInfo),record(record),kill_process(kill_process){}
 };
 
 // SocketThread线程参数
